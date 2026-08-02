@@ -135,10 +135,32 @@
 @layer base {
   * {
     border-color: var(--color-border);
+    cursor: none;
+  }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
   }
 
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
+}
+
+@keyframes gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animated-gradient {
+  background: linear-gradient(270deg, #67e8f9, #ffffff, #a5f3fc, #06b6d4, #ffffff);
+  background-size: 300% 300%;
+  animation: gradient-shift 4s ease infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
 }
