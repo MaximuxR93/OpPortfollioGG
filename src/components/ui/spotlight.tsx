@@ -11,12 +11,11 @@ type SpotlightProps = {
 
 export function Spotlight({
   className,
-  size = 200,
-  springOptions = { bounce: 0 },
+  size = 360,
+  springOptions = { stiffness: 260, damping: 30, mass: 0.5 },
 }: SpotlightProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
-  const [parentElement, setParentElement] = useState<HTMLElement | null>(null);
 
   const mouseX = useSpring(0, springOptions);
   const mouseY = useSpring(0, springOptions);
@@ -24,49 +23,36 @@ export function Spotlight({
   const spotlightLeft = useTransform(mouseX, (x) => `${x - size / 2}px`);
   const spotlightTop = useTransform(mouseY, (y) => `${y - size / 2}px`);
 
-  useEffect(() => {
-    if (containerRef.current) {
-      const parent = containerRef.current.parentElement;
-      if (parent) {
-        parent.style.position = "relative";
-        parent.style.overflow = "hidden";
-        setParentElement(parent);
-      }
-    }
-  }, []);
-
   const handleMouseMove = useCallback(
     (event: MouseEvent) => {
-      if (!parentElement) return;
-      const { left, top } = parentElement.getBoundingClientRect();
+      if (!event.isTrusted || !containerRef.current?.parentElement) return;
+      const { left, top } = containerRef.current.parentElement.getBoundingClientRect();
       mouseX.set(event.clientX - left);
       mouseY.set(event.clientY - top);
+      setIsHovered(true);
     },
-    [mouseX, mouseY, parentElement]
+    [mouseX, mouseY],
   );
 
   useEffect(() => {
-    if (!parentElement) return;
-    const enter = () => setIsHovered(true);
     const leave = () => setIsHovered(false);
-    parentElement.addEventListener("mousemove", handleMouseMove);
-    parentElement.addEventListener("mouseenter", enter);
-    parentElement.addEventListener("mouseleave", leave);
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
+    document.addEventListener("mouseleave", leave);
     return () => {
-      parentElement.removeEventListener("mousemove", handleMouseMove);
-      parentElement.removeEventListener("mouseenter", enter);
-      parentElement.removeEventListener("mouseleave", leave);
+      window.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseleave", leave);
     };
-  }, [parentElement, handleMouseMove]);
+  }, [handleMouseMove]);
 
   return (
     <motion.div
       ref={containerRef}
+      aria-hidden="true"
       className={cn(
-        "pointer-events-none absolute rounded-full bg-[radial-gradient(circle_at_center,var(--tw-gradient-stops),transparent_80%)] blur-xl transition-opacity duration-200",
-        "from-zinc-50 via-zinc-100 to-zinc-200",
+        "pointer-events-none absolute rounded-full bg-[radial-gradient(circle_at_center,var(--tw-gradient-stops),transparent_75%)] blur-2xl transition-opacity duration-300",
+        "from-cyan-300/15 via-cyan-400/5 to-transparent",
         isHovered ? "opacity-100" : "opacity-0",
-        className
+        className,
       )}
       style={{
         width: size,

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { motion, useInView, AnimatePresence } from "framer-motion";
+import { motion, useInView, useScroll, AnimatePresence } from "framer-motion";
 import { SplineScene } from "@/components/ui/splite";
 import { Spotlight } from "@/components/ui/spotlight";
 import { CursorGlow } from "@/components/ui/cursor-glow";
@@ -41,7 +41,8 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "Mitrayan Mallick — AI Engineer & Full-Stack Developer" },
       {
         property: "og:description",
-        content: "AI-integrated web apps, RAG pipelines, and production LLM tooling — built end-to-end.",
+        content:
+          "AI-integrated web apps, RAG pipelines, and production LLM tooling — built end-to-end.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -51,26 +52,47 @@ export const Route = createFileRoute("/")({
 });
 
 const SCENE = "https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode";
-const ROLES = ["AI Engineer", "RAG Builder", "Full-Stack Dev", "LLM Tooling", "Chrome Ext Dev"];
+const ROLES = ["AI Engineer", "AppSec & LLM", "RAG Builder", "Full-Stack Dev", "Chrome Ext Dev"];
 const NAV_LINKS = ["about", "skills", "experience", "projects", "resume", "credentials", "contact"];
 const ALL_SECTIONS = ["hero", ...NAV_LINKS];
 
 const skills = {
-  "AI / LLM": ["LangChain", "RAG", "Groq", "OpenAI", "Anthropic", "Prompt Engineering", "Scikit-Learn"],
-  Frontend: ["React 18", "Next.js", "TypeScript", "Vite", "Tailwind CSS", "Framer Motion"],
-  Backend: ["Node.js", "Express", "FastAPI", "REST APIs", "Python"],
-  "Databases & Cloud": ["MongoDB", "PostgreSQL", "Redis", "Docker", "Vercel", "Render", "GitHub Actions"],
+  "AI / LLM": [
+    "LangChain",
+    "RAG",
+    "Gemini",
+    "Groq",
+    "OpenAI",
+    "Anthropic",
+    "Prompt Engineering",
+    "Scikit-Learn",
+  ],
+  Frontend: ["React 18", "Next.js", "TypeScript", "Vite", "Tailwind CSS", "Chrome MV3"],
+  Backend: ["Node.js", "Express", "FastAPI", "REST APIs", "SSE Streaming", "Python"],
+  "Data, Cloud & Security": [
+    "MongoDB",
+    "PostgreSQL",
+    "Redis",
+    "Docker",
+    "Vercel",
+    "Render",
+    "GitHub Actions",
+    "SAST / SCA",
+  ],
 };
 
 const experience = [
   {
     role: "Security & Exploit Analyst",
     company: "Raitomira / Nexon",
-    period: "Aug 2024 – Present",
-    stats: [{ label: "critical exploits found", value: 3 }, { label: "high-risk accounts/mo", value: 50 }],
+    period: "Aug 2025 – May 2026",
+    stats: [
+      { label: "critical exploits found", value: 3 },
+      { label: "high-risk accounts/mo", value: 50 },
+    ],
     bullets: [
-      "Identified 3 critical exploits on a 10,000+ user gaming platform; patches shipped in 48h.",
-      "Flag 50+ high-risk accounts per month via an internal threat-detection workflow.",
+      "Found 3 critical exploits on a 10,000+ user platform; reproducible reports led to patches within 48h.",
+      "Built a threat-detection workflow flagging 50+ high-risk accounts per month across 10 months.",
     ],
   },
   {
@@ -80,7 +102,8 @@ const experience = [
     stats: [{ label: "event registrations", value: 500 }],
     bullets: [
       "NES: MERN event platform, 500+ registrations, admin CMS, deployed on Render.",
-      "Dipan Herbals: full-stack marketing site with headless CMS + payment gateway.",
+      "Dipan Herbals: full-stack site with headless CMS, payment gateway, and order notifications.",
+      "Soumya's Creations: Next.js/TypeScript/Tailwind bakery store with cart, filters, WhatsApp ordering.",
     ],
   },
   {
@@ -89,13 +112,22 @@ const experience = [
     period: "Aug 2024 – Oct 2024",
     stats: [],
     bullets: [
-      "Rebuilt MediCure's offline-first reminder engine using Room DB with conflict resolution.",
-      "Shipped a doctor compliance dashboard + foreground-service push notifications.",
+      "Built MediCure's offline-first reminders (Room DB sync with conflict resolution) across 50+ test users.",
+      "Delivered a doctor compliance dashboard and foreground-service push notifications.",
     ],
   },
 ];
 
 const projects = [
+  {
+    name: "SentinelFlow",
+    tag: "Autonomous AppSec Triage Platform",
+    stack: "React 18 · TypeScript · Vite · Tailwind · Node.js · FastAPI · SSE",
+    desc: "Scans repos for vulnerable dependencies (SCA via OSV.dev) and unsafe code (SAST) with attack-path reachability graphs; AI agent streams over SSE to auto-generate patches and escalate critical issues across 4 LLM providers with BYOK and anti-SSRF hardening.",
+    href: "https://github.com/MaximuxR93/Sentinel-Sec",
+    color: "from-rose-500/10 to-amber-500/10",
+    border: "hover:border-rose-400/50",
+  },
   {
     name: "Glimpse",
     tag: "AI Sidebar Chrome Extension",
@@ -125,7 +157,7 @@ const projects = [
   },
 ];
 
-const CV_PATH = "/cv.pdf";
+const CV_PATH = "/assets/aistudio/Mitrayan_Mallick_Resume_2fe31009.pdf";
 
 const credentials = [
   {
@@ -216,8 +248,7 @@ function StatCounter({ value, label }: { value: number; label: string }) {
   const { count, ref } = useCountUp(value);
   return (
     <span ref={ref} className="inline-flex items-baseline gap-1 text-cyan-400 font-bold">
-      {count}+
-      <span className="text-neutral-400 font-normal text-xs ml-1">{label}</span>
+      {count}+<span className="text-neutral-400 font-normal text-xs ml-1">{label}</span>
     </span>
   );
 }
@@ -226,51 +257,61 @@ function Index() {
   const role = useTypewriter(ROLES);
   const [activeSection, setActiveSection] = useState("hero");
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { containerRef, jumpTo } = useFullPageScroll();
+  const { jumpTo } = useFullPageScroll();
+  const { scrollYProgress } = useScroll();
 
   // Console easter egg
   useEffect(() => {
     console.log(
       "%c Hey recruiter 👋 ",
-      "background:#06b6d4;color:#000;font-size:14px;font-weight:bold;padding:4px 8px;border-radius:4px;"
+      "background:#06b6d4;color:#000;font-size:14px;font-weight:bold;padding:4px 8px;border-radius:4px;",
     );
     console.log(
       "%c mitrayanmallick1142002@gmail.com — let's build something.",
-      "color:#67e8f9;font-size:12px;"
+      "color:#67e8f9;font-size:12px;",
     );
   }, []);
 
-  // Forward mouse to Spline canvas
+  // Forward trusted mouse events to Spline canvas without causing a synthetic event loop
   useEffect(() => {
     let raf = 0;
     const forward = (e: MouseEvent) => {
+      if (!e.isTrusted) return;
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
         const canvas = document.querySelector("canvas");
-        if (!canvas) return;
+        if (!canvas || e.target === canvas) return;
         const rect = canvas.getBoundingClientRect();
         if (rect.width === 0) return;
-        const init: MouseEventInit = { clientX: e.clientX, clientY: e.clientY, bubbles: true, cancelable: true, view: window };
+        const init: MouseEventInit = {
+          clientX: e.clientX,
+          clientY: e.clientY,
+          bubbles: false,
+          cancelable: true,
+          view: window,
+        };
         canvas.dispatchEvent(new MouseEvent("pointermove", init));
         canvas.dispatchEvent(new MouseEvent("mousemove", init));
       });
     };
-    window.addEventListener("mousemove", forward);
-    return () => { window.removeEventListener("mousemove", forward); cancelAnimationFrame(raf); };
+    window.addEventListener("mousemove", forward, { passive: true });
+    return () => {
+      window.removeEventListener("mousemove", forward);
+      cancelAnimationFrame(raf);
+    };
   }, []);
 
-  // Active nav section on scroll — observe inside container
+  // Active nav section on native viewport scroll
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    const sections = ALL_SECTIONS;
     const observers: IntersectionObserver[] = [];
-    sections.forEach((id) => {
-      const el = container.querySelector<HTMLElement>(`#${id}`);
+    ALL_SECTIONS.forEach((id) => {
+      const el = document.getElementById(id);
       if (!el) return;
       const obs = new IntersectionObserver(
-        ([entry]) => { if (entry.isIntersecting) setActiveSection(id); },
-        { threshold: 0.4, root: container },
+        ([entry]) => {
+          if (entry.isIntersecting) setActiveSection(id);
+        },
+        { root: null, rootMargin: "-40% 0px -40% 0px", threshold: 0 },
       );
       obs.observe(el);
       observers.push(obs);
@@ -279,28 +320,15 @@ function Index() {
   }, []);
 
   return (
-    <div
-      ref={containerRef}
-      className="h-screen bg-black text-white overflow-y-auto overflow-x-hidden"
-      style={{ scrollBehavior: "smooth" }}
-    >
-      <div className="hidden md:block"><CursorGlow /></div>
+    <div className="min-h-screen bg-black text-white relative">
+      <div className="hidden md:block">
+        <CursorGlow />
+      </div>
 
       {/* Scroll progress bar */}
       <motion.div
-        className="fixed top-0 left-0 h-[2px] bg-cyan-400 z-50 origin-left"
-        style={{
-          scaleX: activeSection === "hero" ? 0
-            : activeSection === "about" ? 1/8
-            : activeSection === "skills" ? 2/8
-            : activeSection === "experience" ? 3/8
-            : activeSection === "projects" ? 4/8
-            : activeSection === "resume" ? 5/8
-            : activeSection === "credentials" ? 6/8
-            : activeSection === "contact" ? 1 : 0,
-          width: "100%",
-        }}
-        transition={{ duration: 0.4 }}
+        className="fixed top-0 left-0 h-[2px] w-full bg-cyan-400 z-50 origin-left pointer-events-none"
+        style={{ scaleX: scrollYProgress }}
       />
 
       {/* Right side dot indicators */}
@@ -310,22 +338,29 @@ function Index() {
             key={id}
             onClick={() => jumpTo(id)}
             title={id}
-            className={`rounded-full transition-all duration-300 ${
+            aria-label={`Jump to ${id}`}
+            className={`rounded-full transition-all duration-200 ${
               activeSection === id
                 ? "h-3 w-3 bg-cyan-400 shadow-[0_0_8px_2px_rgba(34,211,238,0.6)]"
-                : "h-2 w-2 bg-white/20 hover:bg-white/50"
+                : "h-2 w-2 bg-white/25 hover:bg-white/60"
             }`}
           />
         ))}
       </div>
-      <div className="fixed top-0 left-0 w-screen h-screen z-0">
+      <div className="fixed inset-0 w-screen h-screen z-0 pointer-events-none">
         <div className="absolute inset-0">
-          <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" size={400} />
+          <Spotlight size={360} />
         </div>
-        <div className="absolute inset-0 hidden md:block">
+        <div className="absolute inset-0 hidden md:block pointer-events-auto">
           <SplineScene scene={SCENE} className="w-full h-full" />
         </div>
-        <div className="absolute inset-0 md:hidden" style={{ background: "radial-gradient(ellipse at 20% 40%, oklch(0.28 0.08 270) 0px, transparent 60%), radial-gradient(ellipse at 80% 70%, oklch(0.22 0.12 200) 0px, transparent 55%), #000" }} />
+        <div
+          className="absolute inset-0 md:hidden"
+          style={{
+            background:
+              "radial-gradient(ellipse at 20% 40%, oklch(0.28 0.08 270) 0px, transparent 60%), radial-gradient(ellipse at 80% 70%, oklch(0.22 0.12 200) 0px, transparent 55%), #000",
+          }}
+        />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent md:via-black/30" />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
       </div>
@@ -341,7 +376,7 @@ function Index() {
 
             {/* Desktop nav */}
             <div className="hidden md:flex items-center gap-8 text-sm">
-              {NAV_LINKS.filter(id => id !== "resume" && id !== "credentials").map((id) => (
+              {NAV_LINKS.filter((id) => id !== "resume" && id !== "credentials").map((id) => (
                 <button
                   key={id}
                   onClick={() => jumpTo(id)}
@@ -355,7 +390,9 @@ function Index() {
               <button
                 onClick={() => jumpTo("credentials")}
                 className={`capitalize transition-colors duration-200 ${
-                  activeSection === "credentials" ? "text-cyan-400" : "text-neutral-400 hover:text-white"
+                  activeSection === "credentials"
+                    ? "text-cyan-400"
+                    : "text-neutral-400 hover:text-white"
                 }`}
               >
                 credentials
@@ -400,10 +437,13 @@ function Index() {
                 className="md:hidden border-t border-white/5 bg-black/80 backdrop-blur-md overflow-hidden"
               >
                 <div className="flex flex-col px-6 py-4 gap-4">
-                  {NAV_LINKS.filter(id => id !== "resume").map((id) => (
+                  {NAV_LINKS.filter((id) => id !== "resume").map((id) => (
                     <button
                       key={id}
-                      onClick={() => { jumpTo(id); setMobileOpen(false); }}
+                      onClick={() => {
+                        jumpTo(id);
+                        setMobileOpen(false);
+                      }}
                       className={`capitalize text-sm transition-colors text-left ${
                         activeSection === id ? "text-cyan-400" : "text-neutral-300"
                       }`}
@@ -413,7 +453,7 @@ function Index() {
                   ))}
                   <a
                     href={CV_PATH}
-                    download="Mitrayan_Mallick_CV.pdf"
+                    download="Mitrayan_Mallick_Resume.pdf"
                     className="text-sm px-4 py-2 rounded-full border border-cyan-400/40 text-cyan-400 text-center hover:bg-cyan-400/10 transition inline-flex items-center justify-center gap-2"
                   >
                     <Download className="h-4 w-4" /> Download CV
@@ -432,7 +472,6 @@ function Index() {
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10">
           <div className="w-full md:max-w-[52%]">
-
             {/* Hero */}
             <section id="hero" className="min-h-screen flex flex-col justify-center pt-20">
               {/* Pulsing badge */}
@@ -479,7 +518,8 @@ function Index() {
                 transition={{ delay: 0.4 }}
                 className="mt-4 text-base md:text-xl text-neutral-300 max-w-xl"
               >
-                Building LLM-powered products, RAG systems, and production Chrome extensions end-to-end.
+                Building LLM-powered products, RAG systems, and production Chrome extensions
+                end-to-end.
               </motion.p>
 
               <motion.div
@@ -490,22 +530,22 @@ function Index() {
               >
                 <button
                   onClick={() => jumpTo("projects")}
-                  className="px-5 py-3 rounded-full bg-cyan-400 text-black text-sm font-medium hover:bg-cyan-300 transition hover:scale-105 active:scale-95"
+                  className="px-5 py-3 rounded-full bg-cyan-400 text-black text-sm font-medium hover:bg-cyan-300 transition-colors duration-200"
                 >
                   View my work
                 </button>
                 <a
                   href={CV_PATH}
-                  download="Mitrayan_Mallick_CV.pdf"
-                  className="px-5 py-3 rounded-full border border-cyan-400/40 text-cyan-400 text-sm font-medium hover:bg-cyan-400/10 transition inline-flex items-center gap-2 hover:scale-105 active:scale-95 group"
+                  download="Mitrayan_Mallick_Resume.pdf"
+                  className="px-5 py-3 rounded-full border border-cyan-400/40 text-cyan-400 text-sm font-medium hover:bg-cyan-400/10 hover:border-cyan-400/70 transition-colors duration-200 inline-flex items-center gap-2"
                 >
-                  <Download className="h-4 w-4 group-hover:animate-bounce" /> Download CV
+                  <Download className="h-4 w-4" /> Download CV
                 </a>
                 <a
                   href="https://github.com/MaximuxR93"
                   target="_blank"
                   rel="noreferrer"
-                  className="px-5 py-3 rounded-full border border-white/15 text-sm font-medium hover:bg-white/5 transition inline-flex items-center gap-2 hover:scale-105 active:scale-95"
+                  className="px-5 py-3 rounded-full border border-white/15 text-sm font-medium hover:bg-white/10 hover:border-white/30 transition-colors duration-200 inline-flex items-center gap-2"
                 >
                   <Github className="h-4 w-4" /> GitHub
                 </a>
@@ -517,8 +557,12 @@ function Index() {
                 transition={{ delay: 0.6 }}
                 className="mt-10 flex items-center gap-6 text-sm text-neutral-400"
               >
-                <span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4" /> Kolkata, India</span>
-                <span className="inline-flex items-center gap-2"><GraduationCap className="h-4 w-4" /> CGPA 8.79 / 10</span>
+                <span className="inline-flex items-center gap-2">
+                  <MapPin className="h-4 w-4" /> Kolkata, India
+                </span>
+                <span className="inline-flex items-center gap-2">
+                  <GraduationCap className="h-4 w-4" /> CGPA 8.79 / 10
+                </span>
               </motion.div>
             </section>
 
@@ -533,8 +577,9 @@ function Index() {
               <Reveal delay={0.1}>
                 <p className="text-lg leading-relaxed text-neutral-300">
                   B.Tech in Computer Science (AI/ML) with hands-on experience building and shipping
-                  AI-integrated web apps and Android apps. I've designed a production Chrome extension
-                  with multi-LLM support and built a full-stack RAG system using LangChain + FastAPI.
+                  AI-integrated web apps and Android apps. I've designed a production Chrome
+                  extension with multi-LLM support and built a full-stack RAG system using LangChain
+                  + FastAPI.
                 </p>
               </Reveal>
               <Reveal delay={0.2}>
@@ -549,7 +594,9 @@ function Index() {
             <section id="skills" className="min-h-screen flex flex-col justify-center py-24">
               <Reveal>
                 <p className="text-xs uppercase tracking-[0.3em] text-cyan-400/80 mb-3">Toolbox</p>
-                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-8 tracking-tight">Skills & technologies.</h2>
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-8 tracking-tight">
+                  Skills & technologies.
+                </h2>
               </Reveal>
               <div className="grid gap-4">
                 {Object.entries(skills).map(([group, items], gi) => (
@@ -565,7 +612,9 @@ function Index() {
                         ) : (
                           <Sparkles className="h-4 w-4 text-cyan-400" />
                         )}
-                        <h3 className="text-sm uppercase tracking-widest text-neutral-400">{group}</h3>
+                        <h3 className="text-sm uppercase tracking-widest text-neutral-400">
+                          {group}
+                        </h3>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {items.map((s, si) => (
@@ -591,7 +640,9 @@ function Index() {
             <section id="experience" className="min-h-screen flex flex-col justify-center py-24">
               <Reveal>
                 <p className="text-xs uppercase tracking-[0.3em] text-cyan-400/80 mb-3">Work</p>
-                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-10 tracking-tight">Experience.</h2>
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-10 tracking-tight">
+                  Experience.
+                </h2>
               </Reveal>
               <div className="relative pl-6 border-l border-white/10">
                 {experience.map((e, i) => (
@@ -606,9 +657,13 @@ function Index() {
                               <Briefcase className="h-4 w-4" />
                               {e.company}
                             </div>
-                            <h3 className="text-lg sm:text-xl font-semibold text-white">{e.role}</h3>
+                            <h3 className="text-lg sm:text-xl font-semibold text-white">
+                              {e.role}
+                            </h3>
                           </div>
-                          <span className="text-xs text-neutral-400 sm:shrink-0 sm:mt-1">{e.period}</span>
+                          <span className="text-xs text-neutral-400 sm:shrink-0 sm:mt-1">
+                            {e.period}
+                          </span>
                         </div>
                         {e.stats.length > 0 && (
                           <div className="flex flex-wrap gap-4 mb-3 text-sm">
@@ -633,27 +688,32 @@ function Index() {
             </section>
 
             {/* Projects */}
-            <section id="projects" className="min-h-screen flex flex-col justify-center py-24">
+            <section
+              id="projects"
+              className="min-h-screen flex flex-col justify-center py-24 scroll-mt-16"
+            >
               <Reveal>
-                <p className="text-xs uppercase tracking-[0.3em] text-cyan-400/80 mb-3">Selected work</p>
-                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-8 tracking-tight">Projects.</h2>
+                <p className="text-xs uppercase tracking-[0.3em] text-cyan-400/80 mb-3">
+                  Selected work
+                </p>
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-8 tracking-tight">
+                  Projects.
+                </h2>
               </Reveal>
               <div className="grid gap-5">
                 {projects.map((p, i) => (
-                  <Reveal key={p.name} delay={i * 0.1}>
+                  <Reveal key={p.name} delay={i * 0.08}>
                     <a
                       href={p.href}
                       target="_blank"
                       rel="noreferrer"
-                      className={`group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br ${p.color} backdrop-blur p-6 ${p.border} transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-cyan-500/10 block`}
+                      className={`group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br ${p.color} backdrop-blur p-6 ${p.border} hover:bg-white/[0.04] transition-colors duration-200 block`}
                     >
-                      {/* Sweep shine on hover */}
-                      <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-12 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-700" />
                       <div className="flex items-start justify-between gap-4">
                         <div>
                           <h3 className="text-xl font-semibold text-white flex items-center gap-2">
                             {p.name}
-                            <ExternalLink className="h-4 w-4 text-neutral-500 group-hover:text-cyan-400 transition" />
+                            <ExternalLink className="h-4 w-4 text-neutral-500 group-hover:text-cyan-400 transition-colors duration-200" />
                           </h3>
                           <p className="text-sm text-cyan-400/90 mt-0.5">{p.tag}</p>
                         </div>
@@ -667,39 +727,62 @@ function Index() {
             </section>
 
             {/* Resume */}
-            <section id="resume" className="min-h-screen flex flex-col justify-center py-24">
+            <section
+              id="resume"
+              className="min-h-screen flex flex-col justify-center py-24 scroll-mt-16"
+            >
               <Reveal>
                 <p className="text-xs uppercase tracking-[0.3em] text-cyan-400/80 mb-3">Resume</p>
-                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight">Grab my CV.</h2>
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight">
+                  Grab my CV.
+                </h2>
               </Reveal>
               <Reveal delay={0.1}>
                 <p className="text-lg text-neutral-300 mb-10 max-w-lg">
-                  Full breakdown of my experience, projects, education and skills — one PDF, no fluff.
+                  Full breakdown of my experience, projects, education and skills — one PDF, no
+                  fluff.
                 </p>
               </Reveal>
               <Reveal delay={0.2}>
-                <a
-                  href={CV_PATH}
-                  download="Mitrayan_Mallick_CV.pdf"
-                  className="group inline-flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur p-5 sm:p-6 hover:border-cyan-400/40 hover:bg-white/[0.06] transition-all duration-300 hover:scale-[1.02] w-full sm:w-fit"
-                >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-400/10 border border-cyan-400/20 group-hover:bg-cyan-400/20 transition">
-                    <FileText className="h-6 w-6 text-cyan-400" />
-                  </div>
-                  <div>
-                    <p className="text-white font-semibold">Mitrayan_Mallick_CV.pdf</p>
-                    <p className="text-neutral-400 text-sm mt-0.5">Click to download</p>
-                  </div>
-                  <Download className="h-5 w-5 text-neutral-500 group-hover:text-cyan-400 group-hover:translate-y-0.5 transition-all ml-4" />
-                </a>
+                <div className="flex flex-wrap items-center gap-4">
+                  <a
+                    href={CV_PATH}
+                    download="Mitrayan_Mallick_Resume.pdf"
+                    className="group inline-flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur p-5 sm:p-6 hover:border-cyan-400/40 hover:bg-white/[0.06] transition-colors duration-200 w-full sm:w-fit"
+                  >
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-400/10 border border-cyan-400/20 group-hover:bg-cyan-400/20 transition-colors duration-200">
+                      <FileText className="h-6 w-6 text-cyan-400" />
+                    </div>
+                    <div>
+                      <p className="text-white font-semibold">Mitrayan_Mallick_Resume.pdf</p>
+                      <p className="text-neutral-400 text-sm mt-0.5">Click to download</p>
+                    </div>
+                    <Download className="h-5 w-5 text-neutral-500 group-hover:text-cyan-400 transition-colors duration-200 ml-4" />
+                  </a>
+                  <a
+                    href={CV_PATH}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 text-sm font-medium text-neutral-300 hover:border-white/25 hover:text-white hover:bg-white/[0.06] transition-colors duration-200"
+                  >
+                    <ExternalLink className="h-4 w-4" /> View PDF
+                  </a>
+                </div>
               </Reveal>
             </section>
 
             {/* Credentials */}
-            <section id="credentials" className="min-h-screen flex flex-col justify-center py-24">
+            <section
+              id="credentials"
+              className="min-h-screen flex flex-col justify-center py-24 scroll-mt-16"
+            >
               <Reveal>
-                <p className="text-xs uppercase tracking-[0.3em] text-cyan-400/80 mb-3">Proof of work</p>
-                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">Credentials.</h2>
+                <p className="text-xs uppercase tracking-[0.3em] text-cyan-400/80 mb-3">
+                  Proof of work
+                </p>
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
+                  Credentials.
+                </h2>
               </Reveal>
               <Reveal delay={0.1}>
                 <p className="text-lg text-neutral-300 mb-8 max-w-lg">
@@ -709,110 +792,127 @@ function Index() {
 
               {/* Featured row — 2 large cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                {credentials.filter(c => c.featured).map((c, i) => (
-                  <Reveal key={c.title} delay={i * 0.1}>
-                    <div
-                      className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur p-6 flex flex-col gap-4 transition-all duration-300 hover:scale-[1.02]"
-                      style={{ boxShadow: `0 0 0 0 ${c.glow}`, transition: "box-shadow 0.3s ease, transform 0.3s ease" }}
-                      onMouseEnter={e => (e.currentTarget.style.boxShadow = `0 0 32px 4px ${c.glow}`)}
-                      onMouseLeave={e => (e.currentTarget.style.boxShadow = `0 0 0 0 ${c.glow}`)}
-                    >
-                      {/* Glow blob */}
-                      <div
-                        className="pointer-events-none absolute -top-8 -right-8 w-32 h-32 rounded-full opacity-20 blur-2xl"
-                        style={{ background: c.accent }}
-                      />
-                      <div className="flex items-start justify-between">
-                        <span
-                          className="text-[10px] uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border font-medium"
-                          style={{ color: c.accent, borderColor: `${c.accent}40`, background: `${c.accent}10` }}
-                        >
-                          {c.tag}
-                        </span>
-                        <c.icon className="h-5 w-5 opacity-30" style={{ color: c.accent }} />
+                {credentials
+                  .filter((c) => c.featured)
+                  .map((c, i) => (
+                    <Reveal key={c.title} delay={i * 0.1}>
+                      <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur p-6 flex flex-col gap-4 hover:border-white/25 hover:bg-white/[0.05] transition-colors duration-200">
+                        {/* Glow blob */}
+                        <div
+                          className="pointer-events-none absolute -top-8 -right-8 w-32 h-32 rounded-full opacity-20 blur-2xl"
+                          style={{ background: c.accent }}
+                        />
+                        <div className="flex items-start justify-between">
+                          <span
+                            className="text-[10px] uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border font-medium"
+                            style={{
+                              color: c.accent,
+                              borderColor: `${c.accent}40`,
+                              background: `${c.accent}10`,
+                            }}
+                          >
+                            {c.tag}
+                          </span>
+                          <c.icon className="h-5 w-5 opacity-30" style={{ color: c.accent }} />
+                        </div>
+                        <div>
+                          <p className="text-base font-semibold text-white leading-snug">
+                            {c.title}
+                          </p>
+                          <p className="text-xs text-neutral-400 mt-1">{c.subtitle}</p>
+                        </div>
+                        <div className="flex gap-2 mt-auto">
+                          <a
+                            href={c.file}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium border border-white/10 text-neutral-300 hover:text-white hover:border-white/25 transition-colors duration-200"
+                          >
+                            <ExternalLink className="h-3 w-3" /> View
+                          </a>
+                          <a
+                            href={c.file}
+                            download={c.download}
+                            className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium border transition-colors duration-200 hover:brightness-110"
+                            style={{
+                              color: c.accent,
+                              borderColor: `${c.accent}40`,
+                              background: `${c.accent}08`,
+                            }}
+                          >
+                            <Download className="h-3 w-3" /> Save
+                          </a>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-base font-semibold text-white leading-snug">{c.title}</p>
-                        <p className="text-xs text-neutral-400 mt-1">{c.subtitle}</p>
-                      </div>
-                      <div className="flex gap-2 mt-auto">
-                        <a
-                          href={c.file}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium border border-white/10 text-neutral-300 hover:text-white hover:border-white/25 transition-all duration-200"
-                        >
-                          <ExternalLink className="h-3 w-3" /> View
-                        </a>
-                        <a
-                          href={c.file}
-                          download={c.download}
-                          className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium border transition-all duration-200"
-                          style={{ color: c.accent, borderColor: `${c.accent}40`, background: `${c.accent}08` }}
-                        >
-                          <Download className="h-3 w-3" /> Save
-                        </a>
-                      </div>
-                    </div>
-                  </Reveal>
-                ))}
+                    </Reveal>
+                  ))}
               </div>
 
               {/* Secondary grid — 4 compact cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {credentials.filter(c => !c.featured).map((c, i) => (
-                  <Reveal key={c.title} delay={0.2 + i * 0.07}>
-                    <div
-                      className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur p-4 flex flex-col gap-3 transition-all duration-300 hover:scale-[1.02]"
-                      onMouseEnter={e => (e.currentTarget.style.boxShadow = `0 0 24px 2px ${c.glow}`)}
-                      onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}
-                    >
-                      <div
-                        className="pointer-events-none absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-20 blur-xl"
-                        style={{ background: c.accent }}
-                      />
-                      <div className="flex items-center justify-between">
-                        <span
-                          className="text-[9px] uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border font-medium"
-                          style={{ color: c.accent, borderColor: `${c.accent}40`, background: `${c.accent}10` }}
-                        >
-                          {c.tag}
-                        </span>
-                        <c.icon className="h-4 w-4 opacity-25" style={{ color: c.accent }} />
+                {credentials
+                  .filter((c) => !c.featured)
+                  .map((c, i) => (
+                    <Reveal key={c.title} delay={0.2 + i * 0.07}>
+                      <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur p-4 flex flex-col gap-3 hover:border-white/25 hover:bg-white/[0.05] transition-colors duration-200">
+                        <div
+                          className="pointer-events-none absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-20 blur-xl"
+                          style={{ background: c.accent }}
+                        />
+                        <div className="flex items-center justify-between">
+                          <span
+                            className="text-[9px] uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border font-medium"
+                            style={{
+                              color: c.accent,
+                              borderColor: `${c.accent}40`,
+                              background: `${c.accent}10`,
+                            }}
+                          >
+                            {c.tag}
+                          </span>
+                          <c.icon className="h-4 w-4 opacity-25" style={{ color: c.accent }} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-white leading-snug">{c.title}</p>
+                          <p className="text-[11px] text-neutral-500 mt-0.5">{c.subtitle}</p>
+                        </div>
+                        <div className="flex gap-1.5 mt-auto">
+                          <a
+                            href={c.file}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 rounded-lg text-[11px] border border-white/10 text-neutral-400 hover:text-white hover:border-white/20 transition-colors duration-200"
+                          >
+                            <ExternalLink className="h-2.5 w-2.5" /> View
+                          </a>
+                          <a
+                            href={c.file}
+                            download={c.download}
+                            className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 rounded-lg text-[11px] border transition-colors duration-200 hover:brightness-110"
+                            style={{
+                              color: c.accent,
+                              borderColor: `${c.accent}35`,
+                              background: `${c.accent}08`,
+                            }}
+                          >
+                            <Download className="h-2.5 w-2.5" /> Save
+                          </a>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-semibold text-white leading-snug">{c.title}</p>
-                        <p className="text-[11px] text-neutral-500 mt-0.5">{c.subtitle}</p>
-                      </div>
-                      <div className="flex gap-1.5 mt-auto">
-                        <a
-                          href={c.file}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 rounded-lg text-[11px] border border-white/10 text-neutral-400 hover:text-white hover:border-white/20 transition-all duration-200"
-                        >
-                          <ExternalLink className="h-2.5 w-2.5" /> View
-                        </a>
-                        <a
-                          href={c.file}
-                          download={c.download}
-                          className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 rounded-lg text-[11px] border transition-all duration-200"
-                          style={{ color: c.accent, borderColor: `${c.accent}35`, background: `${c.accent}08` }}
-                        >
-                          <Download className="h-2.5 w-2.5" /> Save
-                        </a>
-                      </div>
-                    </div>
-                  </Reveal>
-                ))}
+                    </Reveal>
+                  ))}
               </div>
             </section>
 
             {/* Contact */}
             <section id="contact" className="min-h-screen flex flex-col justify-center py-24">
               <Reveal>
-                <p className="text-xs uppercase tracking-[0.3em] text-cyan-400/80 mb-3">Get in touch</p>
-                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight">Let's build something.</h2>
+                <p className="text-xs uppercase tracking-[0.3em] text-cyan-400/80 mb-3">
+                  Get in touch
+                </p>
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight">
+                  Let's build something.
+                </h2>
               </Reveal>
               <Reveal delay={0.1}>
                 <p className="text-lg text-neutral-300 mb-8 max-w-lg">
@@ -822,19 +922,33 @@ function Index() {
               </Reveal>
               <div className="grid sm:grid-cols-2 gap-3">
                 {[
-                  { href: "mailto:mitrayanmallick1142002@gmail.com", icon: Mail, label: "mitrayanmallick1142002@gmail.com" },
+                  {
+                    href: "mailto:mitrayanmallick1142002@gmail.com",
+                    icon: Mail,
+                    label: "mitrayanmallick1142002@gmail.com",
+                  },
                   { href: "tel:+917980423657", icon: Phone, label: "+91 79804 23657" },
-                  { href: "https://github.com/MaximuxR93", icon: Github, label: "github.com/MaximuxR93", external: true },
-                  { href: "https://linkedin.com/in/mitrayan-mallick", icon: Linkedin, label: "linkedin.com/in/mitrayan-mallick", external: true },
+                  {
+                    href: "https://github.com/MaximuxR93",
+                    icon: Github,
+                    label: "github.com/MaximuxR93",
+                    external: true,
+                  },
+                  {
+                    href: "https://linkedin.com/in/mitrayan-mallick",
+                    icon: Linkedin,
+                    label: "linkedin.com/in/mitrayan-mallick",
+                    external: true,
+                  },
                 ].map((c, i) => (
                   <Reveal key={c.label} delay={i * 0.07}>
                     <a
                       href={c.href}
                       target={c.external ? "_blank" : undefined}
                       rel={c.external ? "noreferrer" : undefined}
-                      className="rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur p-4 hover:border-cyan-400/40 hover:bg-white/[0.06] transition-all duration-200 flex items-center gap-3 group"
+                      className="rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur p-4 hover:border-cyan-400/40 hover:bg-white/[0.06] transition-colors duration-200 flex items-center gap-3 group"
                     >
-                      <c.icon className="h-4 w-4 text-cyan-400 group-hover:scale-110 transition-transform" />
+                      <c.icon className="h-4 w-4 text-cyan-400 transition-colors duration-200" />
                       <span className="text-sm">{c.label}</span>
                     </a>
                   </Reveal>
@@ -846,7 +960,6 @@ function Index() {
                 </p>
               </Reveal>
             </section>
-
           </div>
         </main>
       </div>
